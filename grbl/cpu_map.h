@@ -98,13 +98,15 @@
 
   #if !defined(ENABLE_DUAL_AXIS)
 
-    // Define flood and mist coolant enable output pins.
+    // Define flood coolant enable output pin.
     #define COOLANT_FLOOD_DDR   DDRC
     #define COOLANT_FLOOD_PORT  PORTC
     #define COOLANT_FLOOD_BIT   3  // Uno Analog Pin 3
-    #define COOLANT_MIST_DDR   DDRC
-    #define COOLANT_MIST_PORT  PORTC
-    #define COOLANT_MIST_BIT   4  // Uno Analog Pin 4
+
+    // Define fan enable output pin.
+    #define FAN_DDR   DDRC
+    #define FAN_PORT  PORTC
+    #define FAN_BIT   4  // Uno Analog Pin 4
 
     // Define spindle enable and spindle direction output pins.
     #define SPINDLE_ENABLE_DDR    DDRB
@@ -125,6 +127,11 @@
       #define SPINDLE_DIRECTION_PORT  PORTB
       #define SPINDLE_DIRECTION_BIT   5  // Uno Digital Pin 13 (NOTE: D13 can't be pulled-high input due to LED.)
     #endif
+
+    // Define fan enable output pin.
+    #define FAN_DDR   DDRC
+    #define FAN_PORT  PORTC
+    #define FAN_BIT   4  // Uno Analog Pin 4
 
     // Variable spindle configuration below. Do not change unless you know what you are doing.
     // NOTE: Only used when variable spindle is enabled.
@@ -150,11 +157,11 @@
     #define SPINDLE_PWM_DDR   DDRB
     #define SPINDLE_PWM_PORT  PORTB
     #define SPINDLE_PWM_BIT   3    // Uno Digital Pin 11
-  
+
   #else
 
-    // Dual axis feature requires an independent step pulse pin to operate. The independent direction pin is not 
-    // absolutely necessary but facilitates easy direction inverting with a Grbl $$ setting. These pins replace 
+    // Dual axis feature requires an independent step pulse pin to operate. The independent direction pin is not
+    // absolutely necessary but facilitates easy direction inverting with a Grbl $$ setting. These pins replace
     // the spindle direction and optional coolant mist pins.
 
     #ifdef DUAL_AXIS_CONFIG_PROTONEER_V3_51

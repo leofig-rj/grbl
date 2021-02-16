@@ -156,11 +156,11 @@ ISR(SERIAL_RX)
       if (data > 0x7F) { // Real-time control characters are extended ACSII only.
         switch(data) {
           case CMD_SAFETY_DOOR:   system_set_exec_state_flag(EXEC_SAFETY_DOOR); break; // Set as true
-          case CMD_JOG_CANCEL:   
+          case CMD_JOG_CANCEL:
             if (sys.state & STATE_JOG) { // Block all other states from invoking motion cancel.
-              system_set_exec_state_flag(EXEC_MOTION_CANCEL); 
+              system_set_exec_state_flag(EXEC_MOTION_CANCEL);
             }
-            break; 
+            break;
           #ifdef DEBUG
             case CMD_DEBUG_REPORT: {uint8_t sreg = SREG; cli(); bit_true(sys_rt_exec_debug,EXEC_DEBUG_REPORT); SREG = sreg;} break;
           #endif
@@ -179,9 +179,7 @@ ISR(SERIAL_RX)
           case CMD_SPINDLE_OVR_FINE_MINUS: system_set_exec_accessory_override_flag(EXEC_SPINDLE_OVR_FINE_MINUS); break;
           case CMD_SPINDLE_OVR_STOP: system_set_exec_accessory_override_flag(EXEC_SPINDLE_OVR_STOP); break;
           case CMD_COOLANT_FLOOD_OVR_TOGGLE: system_set_exec_accessory_override_flag(EXEC_COOLANT_FLOOD_OVR_TOGGLE); break;
-          #ifdef ENABLE_M7
-            case CMD_COOLANT_MIST_OVR_TOGGLE: system_set_exec_accessory_override_flag(EXEC_COOLANT_MIST_OVR_TOGGLE); break;
-          #endif
+          case CMD_FAN_OVR_TOGGLE: system_set_exec_accessory_override_flag(EXEC_FAN_OVR_TOGGLE); break;
         }
         // Throw away any unfound extended-ASCII character by not passing it to the serial buffer.
       } else { // Write character to buffer

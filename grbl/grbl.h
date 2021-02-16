@@ -2,6 +2,7 @@
   grbl.h - main Grbl include file
   Part of Grbl
 
+  Copyright (c) 2021 Leonardo Figueiro
   Copyright (c) 2015-2016 Sungeun K. Jeon for Gnea Research LLC
 
   Grbl is free software: you can redistribute it and/or modify
@@ -47,6 +48,7 @@
 #include "cpu_map.h"
 #include "planner.h"
 #include "coolant_control.h"
+#include "fan_control.h"
 #include "eeprom.h"
 #include "gcode.h"
 #include "limits.h"
@@ -129,9 +131,6 @@
   #endif
   #if defined(USE_SPINDLE_DIR_AS_ENABLE_PIN)
     #error "USE_SPINDLE_DIR_AS_ENABLE_PIN not supported with dual axis feature."
-  #endif
-  #if defined(ENABLE_M7)
-    #error "ENABLE_M7 not supported with dual axis feature."
   #endif
 #endif
 

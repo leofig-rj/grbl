@@ -56,7 +56,7 @@ When `$#` is called, Grbl will respond with the stored offsets from machine coor
 
 #### `$G` - View gcode parser state
 
-This command prints all of the active gcode modes in Grbl's G-code parser. When sending this command to Grbl, it will reply with a message starting with an `[GC:` indicator like: 
+This command prints all of the active gcode modes in Grbl's G-code parser. When sending this command to Grbl, it will reply with a message starting with an `[GC:` indicator like:
 
 ```
 [GC:G0 G54 G17 G21 G90 G94 M0 M5 M9 T0 S0.0 F500.0]
@@ -143,9 +143,9 @@ TIP: After running a homing cycle, rather jogging manually all the time to a pos
 
 #### `$Jx=line` - Run jogging motion
 
-New to Grbl v1.1, this command will execute a special jogging motion. There are three main differences between a jogging motion and a motion commanded by a g-code line. 
+New to Grbl v1.1, this command will execute a special jogging motion. There are three main differences between a jogging motion and a motion commanded by a g-code line.
 
-- Like normal g-code commands, several jog motions may be queued into the planner buffer, but the jogging can be easily canceled by a jog-cancel or feed-hold real-time command. Grbl will immediately hold the current jog and then automatically purge the buffers of any remaining commands. 
+- Like normal g-code commands, several jog motions may be queued into the planner buffer, but the jogging can be easily canceled by a jog-cancel or feed-hold real-time command. Grbl will immediately hold the current jog and then automatically purge the buffers of any remaining commands.
 - Jog commands are completely independent of the g-code parser state. It will not change any modes like `G91` incremental distance mode. So, you no longer have to make sure that you change it back to `G90` absolute distance mode afterwards. This helps reduce the chance of starting with the wrong g-code modes enabled.
 - If soft-limits are enabled, any jog command that exceeds a soft-limit will simply return an error. It will not throw an alarm as it would with a normal g-code command. This allows for a much more enjoyable and fluid GUI or joystick interaction.
 
@@ -183,7 +183,7 @@ These commands are not listed in the main Grbl `$` help message, but are availab
 - `$RST=#` : Erases and zeros all G54-G59 work coordinate offsets and G28/30 positions stored in EEPROM. These are generally the values seen in the `$#` parameters printout. This provides an easy way to clear these without having to do it manually for each set with a `G20 L2/20` or `G28.1/30.1` command.
 - `$RST=*` : This clears and restores all of the EEPROM data used by Grbl. This includes `$$` settings, `$#` parameters, `$N` startup lines, and `$I` build info string. Note that this doesn't wipe the entire EEPROM, only the data areas Grbl uses. To do a complete wipe, please use the Arduino IDE's EEPROM clear example project.
 
-NOTE: Some OEMs may restrict some or all of these commands to prevent certain data they use from being wiped. 
+NOTE: Some OEMs may restrict some or all of these commands to prevent certain data they use from being wiped.
 
 #### `$SLP` - Enable Sleep Mode
 
@@ -206,7 +206,7 @@ A realtime command:
 
 - Does not require a line feed or carriage return after them.
 
-- Is not considered a part of the streaming protocol. 
+- Is not considered a part of the streaming protocol.
 
 - Are intercepted when they are received and never placed in a buffer to be parsed by Grbl.
 
@@ -275,7 +275,7 @@ Grbl v1.1 installed more than a dozen new realtime commands to control feed, rap
   - Immediately cancels the current jog state by a feed hold and automatically flushing any remaining jog commands in the buffer.
   - Command is ignored, if not in a JOG state or if jog cancel is already invoked and in-process.
   - Grbl will return to the IDLE state or the DOOR state, if the safety door was detected as ajar during the cancel.
-  
+
 
 - Feed Overrides
 
@@ -333,13 +333,12 @@ Grbl v1.1 installed more than a dozen new realtime commands to control feed, rap
   - Toggles flood coolant state and output pin until the next toggle or g-code command alters it.
   - May be commanded at any time while in IDLE, RUN, or HOLD states. It is otherwise ignored.
   - This override directly changes the coolant modal state in the g-code parser. Grbl will continue to operate normally like it received and executed an `M8` or `M9` g-code command.
-  - When `$G` g-code parser state is queried, the toggle override change will be reflected by an `M8` enabled or disabled with an `M9` or not appearing when `M7` is present.
+  - When `$G` g-code parser state is queried, the toggle override change will be reflected by an `M8` enabled or disabled with an `M9`.
 
 
-- `0xA1` : Toggle Mist Coolant
+- `0xA1` : Toggle Fan
 
-  - Enabled by `ENABLE_M7` compile-time option. Default is disabled.
-  - Toggles mist coolant state and output pin until the next toggle or g-code command alters it.
+  - Toggles fan state and output pin until the next toggle or g-code command alters it.
   - May be commanded at any time while in IDLE, RUN, or HOLD states. It is otherwise ignored.
-  - This override directly changes the coolant modal state in the g-code parser. Grbl will continue to operate normally like it received and executed an `M7` or `M9` g-code command.
-  - When `$G` g-code parser state is queried, the toggle override change will be reflected by an `M7` enabled or disabled with an `M9` or not appearing when `M8` is present.
+  - This override directly changes the coolant modal state in the g-code parser. Grbl will continue to operate normally like it received and executed an `M106` or `M107` g-code command.
+  - When `$G` g-code parser state is queried, the toggle override change will be reflected by an `M106` enabled or disabled with an `M107`.

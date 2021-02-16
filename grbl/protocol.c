@@ -258,14 +258,14 @@ void protocol_exec_rt_system()
 
       // State check for allowable states for hold methods.
       if (!(sys.state & (STATE_ALARM | STATE_CHECK_MODE))) {
-      
+
         // If in CYCLE or JOG states, immediately initiate a motion HOLD.
         if (sys.state & (STATE_CYCLE | STATE_JOG)) {
           if (!(sys.suspend & (SUSPEND_MOTION_CANCEL | SUSPEND_JOG_CANCEL))) { // Block, if already holding.
             st_update_plan_block_parameters(); // Notify stepper module to recompute for hold deceleration.
             sys.step_control = STEP_CONTROL_EXECUTE_HOLD; // Initiate suspend state with active flag.
             if (sys.state == STATE_JOG) { // Jog cancelled upon any hold event, except for sleeping.
-              if (!(rt_exec & EXEC_SLEEP)) { sys.suspend |= SUSPEND_JOG_CANCEL; } 
+              if (!(rt_exec & EXEC_SLEEP)) { sys.suspend |= SUSPEND_JOG_CANCEL; }
             }
           }
         }
@@ -316,12 +316,12 @@ void protocol_exec_rt_system()
           // are executed if the door switch closes and the state returns to HOLD.
           sys.suspend |= SUSPEND_SAFETY_DOOR_AJAR;
         }
-        
+
       }
 
       if (rt_exec & EXEC_SLEEP) {
         if (sys.state == STATE_ALARM) { sys.suspend |= (SUSPEND_RETRACT_COMPLETE|SUSPEND_HOLD_COMPLETE); }
-        sys.state = STATE_SLEEP; 
+        sys.state = STATE_SLEEP;
       }
 
       system_clear_exec_state_flag((EXEC_MOTION_CANCEL | EXEC_FEED_HOLD | EXEC_SAFETY_DOOR | EXEC_SLEEP));
@@ -464,24 +464,26 @@ void protocol_exec_rt_system()
     // NOTE: Since coolant state always performs a planner sync whenever it changes, the current
     // run state can be determined by checking the parser state.
     // NOTE: Coolant overrides only operate during IDLE, CYCLE, HOLD, and JOG states. Ignored otherwise.
-    if (rt_exec & (EXEC_COOLANT_FLOOD_OVR_TOGGLE | EXEC_COOLANT_MIST_OVR_TOGGLE)) {
+    if (rt_exec & (EXEC_COOLANT_FLOOD_OVR_TOGGLE)) {
       if ((sys.state == STATE_IDLE) || (sys.state & (STATE_CYCLE | STATE_HOLD | STATE_JOG))) {
         uint8_t coolant_state = gc_state.modal.coolant;
-        #ifdef ENABLE_M7
-          if (rt_exec & EXEC_COOLANT_MIST_OVR_TOGGLE) {
-            if (coolant_state & COOLANT_MIST_ENABLE) { bit_false(coolant_state,COOLANT_MIST_ENABLE); }
-            else { coolant_state |= COOLANT_MIST_ENABLE; }
-          }
-          if (rt_exec & EXEC_COOLANT_FLOOD_OVR_TOGGLE) {
-            if (coolant_state & COOLANT_FLOOD_ENABLE) { bit_false(coolant_state,COOLANT_FLOOD_ENABLE); }
-            else { coolant_state |= COOLANT_FLOOD_ENABLE; }
-          }
-        #else
-          if (coolant_state & COOLANT_FLOOD_ENABLE) { bit_false(coolant_state,COOLANT_FLOOD_ENABLE); }
-          else { coolant_state |= COOLANT_FLOOD_ENABLE; }
-        #endif
+        if (coolant_state & COOLANT_FLOOD_ENABLE) { bit_false(coolant_state,COOLANT_FLOOD_ENABLE); }
+        else { coolant_state |= COOLANT_FLOOD_ENABLE; }
         coolant_set_state(coolant_state); // Report counter set in coolant_set_state().
         gc_state.modal.coolant = coolant_state;
+      }
+    }
+
+    // NOTE: Since fan state always performs a planner sync whenever it changes, the current
+    // run state can be determined by checking the parser state.
+    // NOTE: Fan overrides only operate during IDLE, CYCLE, HOLD, and JOG states. Ignored otherwise.
+    if (rt_exec & (EXEC_FAN_OVR_TOGGLE)) {
+      if ((sys.state == STATE_IDLE) || (sys.state & (STATE_CYCLE | STATE_HOLD | STATE_JOG))) {
+        uint8_t fan_state = gc_state.modal.fan;
+        if (fan_state & FAN_ENABLE) { bit_false(fan_state,FAN_ENABLE); }
+        else { fan_state |= FAN_ENABLE; }
+        fan_set_state(fan_state); // Report counter set in fan_set_state().
+        gc_state.modal.fan = fan_state;
       }
     }
   }
@@ -527,20 +529,20 @@ static void protocol_exec_rt_suspend()
   #ifdef VARIABLE_SPINDLE
     float restore_spindle_speed;
     if (block == NULL) {
-      restore_condition = (gc_state.modal.spindle | gc_state.modal.coolant);
+      restore_condition = (gc_state.modal.spindle | gc_state.modal.coolant | gc_state.modal.fan);
       restore_spindle_speed = gc_state.spindle_speed;
     } else {
-      restore_condition = (block->condition & PL_COND_SPINDLE_MASK) | coolant_get_state();
+      restore_condition = (block->condition & PL_COND_SPINDLE_MASK) | coolant_get_state() | fan_get_state();
       restore_spindle_speed = block->spindle_speed;
     }
     #ifdef DISABLE_LASER_DURING_HOLD
-      if (bit_istrue(settings.flags,BITFLAG_LASER_MODE)) { 
+      if (bit_istrue(settings.flags,BITFLAG_LASER_MODE)) {
         system_set_exec_accessory_override_flag(EXEC_SPINDLE_OVR_STOP);
       }
     #endif
   #else
-    if (block == NULL) { restore_condition = (gc_state.modal.spindle | gc_state.modal.coolant); }
-    else { restore_condition = (block->condition & PL_COND_SPINDLE_MASK) | coolant_get_state(); }
+    if (block == NULL) { restore_condition = (gc_state.modal.spindle | gc_state.modal.coolant | gc_state.modal.fan); }
+    else { restore_condition = (block->condition & PL_COND_SPINDLE_MASK) | coolant_get_state() | fan_get_state(); }
   #endif
 
   while (sys.suspend) {
@@ -550,10 +552,10 @@ static void protocol_exec_rt_suspend()
     // Block until initial hold is complete and the machine has stopped motion.
     if (sys.suspend & SUSPEND_HOLD_COMPLETE) {
 
-      // Parking manager. Handles de/re-energizing, switch state checks, and parking motions for 
+      // Parking manager. Handles de/re-energizing, switch state checks, and parking motions for
       // the safety door and sleep states.
       if (sys.state & (STATE_SAFETY_DOOR | STATE_SLEEP)) {
-      
+
         // Handles retraction motions and de-energizing.
         if (bit_isfalse(sys.suspend,SUSPEND_RETRACT_COMPLETE)) {
 
@@ -564,9 +566,10 @@ static void protocol_exec_rt_suspend()
 
             spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
             coolant_set_state(COOLANT_DISABLE);     // De-energize
+            fan_set_state(FAN_DISABLE);             // De-energize
 
           #else
-					
+
             // Get current position and store restore location and spindle retract waypoint.
             system_convert_array_steps_to_mpos(parking_target,sys_position);
             if (bit_isfalse(sys.suspend,SUSPEND_RESTART_RETRACT)) {
@@ -603,6 +606,7 @@ static void protocol_exec_rt_suspend()
               pl_data->spindle_speed = 0.0;
               spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
               coolant_set_state(COOLANT_DISABLE); // De-energize
+              fan_set_state(FAN_DISABLE);         // De-energize
 
               // Execute fast parking retract motion to parking target location.
               if (parking_target[PARKING_AXIS] < PARKING_TARGET) {
@@ -617,6 +621,7 @@ static void protocol_exec_rt_suspend()
               // NOTE: Laser mode does not start a parking motion to ensure the laser stops immediately.
               spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
               coolant_set_state(COOLANT_DISABLE);     // De-energize
+              fan_set_state(FAN_DISABLE);             // De-energize
 
             }
 
@@ -627,17 +632,18 @@ static void protocol_exec_rt_suspend()
 
         } else {
 
-          
+
           if (sys.state == STATE_SLEEP) {
             report_feedback_message(MESSAGE_SLEEP_MODE);
             // Spindle and coolant should already be stopped, but do it again just to be sure.
             spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
             coolant_set_state(COOLANT_DISABLE); // De-energize
+            fan_set_state(FAN_DISABLE);     // De-energize
             st_go_idle(); // Disable steppers
             while (!(sys.abort)) { protocol_exec_rt_system(); } // Do nothing until reset.
             return; // Abort received. Return to re-initialize.
-          }    
-          
+          }
+
           // Allows resuming from parking/safety door. Actively checks if safety door is closed and ready to resume.
           if (sys.state == STATE_SAFETY_DOOR) {
             if (!(system_check_safety_door_ajar())) {
@@ -683,8 +689,16 @@ static void protocol_exec_rt_suspend()
               // Block if safety door re-opened during prior restore actions.
               if (bit_isfalse(sys.suspend,SUSPEND_RESTART_RETRACT)) {
                 // NOTE: Laser mode will honor this delay. An exhaust system is often controlled by this pin.
-                coolant_set_state((restore_condition & (PL_COND_FLAG_COOLANT_FLOOD | PL_COND_FLAG_COOLANT_MIST)));
+                coolant_set_state((restore_condition & (PL_COND_FLAG_COOLANT_FLOOD)));
                 delay_sec(SAFETY_DOOR_COOLANT_DELAY, DELAY_MODE_SYS_SUSPEND);
+              }
+            }
+            if (gc_state.modal.fan != FAN_DISABLE) {
+              // Block if safety door re-opened during prior restore actions.
+              if (bit_isfalse(sys.suspend,SUSPEND_RESTART_RETRACT)) {
+                // NOTE: Laser mode will honor this delay. An exhaust system is often controlled by this pin.
+                fan_set_state((restore_condition & (PL_COND_FLAG_FAN)));
+                delay_sec(SAFETY_DOOR_FAN_DELAY, DELAY_MODE_SYS_SUSPEND);
               }
             }
 

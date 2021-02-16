@@ -1,7 +1,6 @@
 OPT: Code, Build-Option Description,State
 V,Variable spindle,Enabled
 N,Line numbers,Enabled
-M,Mist coolant M7,Enabled
 C,CoreXY,Enabled
 P,Parking motion,Enabled
 Z,Homing force origin,Enabled

@@ -68,7 +68,7 @@
 #define EXEC_SPINDLE_OVR_FINE_MINUS    bit(4)
 #define EXEC_SPINDLE_OVR_STOP          bit(5)
 #define EXEC_COOLANT_FLOOD_OVR_TOGGLE  bit(6)
-#define EXEC_COOLANT_MIST_OVR_TOGGLE   bit(7)
+#define EXEC_FAN_OVR_TOGGLE            bit(7)
 
 // Define system state bit map. The state variable primarily tracks the individual functions
 // of Grbl to manage each without overlapping. It is also used as a messaging flag for
@@ -126,7 +126,7 @@
 // Define global system variables
 typedef struct {
   uint8_t state;               // Tracks the current system state of Grbl.
-  uint8_t abort;               // System abort flag. Forces exit back to main loop for reset.             
+  uint8_t abort;               // System abort flag. Forces exit back to main loop for reset.
   uint8_t suspend;             // System suspend bitflag variable that manages holds, cancels, and safety door.
   uint8_t soft_limit;          // Tracks soft limit errors for the state machine. (boolean)
   uint8_t step_control;        // Governs the step segment generator depending on system state.
