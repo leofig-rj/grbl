@@ -30,7 +30,7 @@ List of Supported G-Codes in Grbl v1.1:
   - Control Modes: G61
   - Program Flow: M0, M1, M2, M30*
   - Coolant Control: M8, M9
-	- Fan Control: M106, M107
+  - Fan Control: M106, M107
   - Spindle Control: M3, M4, M5 (In our case, we only use M03 and M04.)
   - Valid Non-Command Words: F, I, J, K, L, N, P, R, S, T, X, Y, Z
 ```
